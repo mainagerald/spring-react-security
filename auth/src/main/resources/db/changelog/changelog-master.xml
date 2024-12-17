@@ -25,5 +25,8 @@
             <column name="provider_id" type="varchar(255)"/>
         </createTable>
     </changeSet>
+    <changeSet id="2" author="maina">
+
+    </changeSet>
 
 </databaseChangeLog>
