@@ -3,6 +3,10 @@ import axios from 'axios';
 import { environment } from '../service/environment';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import axiosInstance from '../utils/AxiosInstance';
+import { toast, ToastContainer } from 'react-toastify';
+import Spinner from '../components/Spinner';
+import { ClipLoader } from 'react-spinners';
 
 const SignUp = () => {
     const [email, setEmail] = useState('');
@@ -11,25 +15,49 @@ const SignUp = () => {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [error, setError] = useState('');
+    const [signInError, setSignInError] = useState('');
+    const [verificationMessage, setVerificationMessage] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
+    const [isLoading, setIsLoading]=useState(false);
 
     useEffect(() => {
-        const handleOAuth2Redirect = () => {
-            const queryParams = new URLSearchParams(location.search);
-            const accessToken = queryParams.get('access_token');
-            const refreshToken = queryParams.get('refresh_token');
+        // Check for email verification token in URL
+        const queryParams = new URLSearchParams(location.search);
+        const verificationToken = queryParams.get('token');
+        
+        if (verificationToken) {
+            verifyEmail(verificationToken);
+        }
+    }, [location]);
 
-            if (accessToken && refreshToken) {
-                localStorage.setItem('access_token', accessToken);
-                localStorage.setItem('refresh_token', refreshToken);
+    useEffect(()=>{
+        if(signInError){
+            toast.error(signInError, {
+                draggable:false,
+                position:'top-right',
+                    autoClose:3000,
+                    closeOnClick:true,
+                    pauseOnHover: false,
+                    hideProgressBar:true,
+                    pauseOnFocusLoss: false,
+                    className:"toast-error"//create css for this
+            })
+        }
+    },[signInError])
 
-                navigate('/', { replace: true });
-            }
-        };
-
-        handleOAuth2Redirect();
-    }, [location, navigate]);
+    const verifyEmail = async (token) => {
+        try {
+            
+            const response = await axiosInstance.get(`${environment.apiUrl}/auth/verify`, {
+                params: { token }
+            });
+            setVerificationMessage('Email verified successfully! Please proceed to log in.');
+            // navigate(`${environment.clientUrl}/login`);
+        } catch (error) {
+            setError('Email verification failed. Please try again or request a new verification link.');
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -42,20 +70,41 @@ const SignUp = () => {
         }
     };
 
+    const validateEmail = (email) => {
+        const emailRegex = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$/;
+        return emailRegex.test(email);
+    };
+
+    const validatePassword = (password) => {
+        // At least 8 characters, one letter and one number
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        return passwordRegex.test(password);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setVerificationMessage('');
+        setIsLoading(true);
 
         if (!email || !password) {
             setError('Email and password are required.');
+            setIsLoading(false)
             return;
         }
-        if (password.length < 8) {
-            setError('Password must be atleast 8 characters long.');
+
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address.');
             return;
         }
-        if (confirmPassword != password) {
-            setError('Passwords must match.')
+
+        if (!validatePassword(password)) {
+            setError('Password must be at least 8 characters long and contain both letters and numbers.');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('Passwords must match.');
             return;
         }
 
@@ -65,18 +114,23 @@ const SignUp = () => {
         };
 
         try {
-            const response = await axios.post(`${environment.apiUrl}/signup`, payload);
-            console.log("Login response:", response.data);
-
-            const { access_token, refresh_token } = response.data;
-
-            localStorage.setItem('access_token', access_token);
-            localStorage.setItem('refresh_token', refresh_token);
-
-            navigate('/');
+            const response = await axiosInstance.post(`${environment.apiUrl}/auth/signup`, payload);
+            setVerificationMessage('Verification email sent. Please check your inbox.');
+            
+            setEmail('');
+            setPassword('');
+            setConfirmPassword('');
         } catch (error) {
-            console.error("Login error:", error);
-            setError('Login failed. Please check your credentials.');
+            console.error("Signup error:", error);
+            if (error.response && error.response.status === 409) {
+                setSignInError('Email already in use.');
+                toast.error(signInError);
+            } else {
+                setSignInError('Signup failed. Please try again.');
+                toast.error(signInError);
+            }
+        }finally{
+            setIsLoading(false);
         }
     };
 
@@ -88,9 +142,11 @@ const SignUp = () => {
         <div className='h-screen flex justify-center items-center'>
             <div className='border-2 border-black rounded-xl p-4 flex flex-col w-1/3'>
                 <div>
-                    <h1 className='font-bold'>Welcome</h1>
+                    <h1 className='font-bold'>Welcome to masQani</h1>
                     <h4 className='font-thin'>Please sign up to continue</h4>
                 </div>
+                {error && <p className='text-red-500 mb-4'>{error}</p>}
+
                 <div>
                     <form onSubmit={handleSubmit} className='flex-col flex'>
                         <label>Email</label>
@@ -105,35 +161,51 @@ const SignUp = () => {
                         />
 
                         <label>Password</label>
-                        <input
-                            name='password'
-                            id='password'
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={handleChange}
-                            className='border rounded p-1 mb-2'
-                            required
-                        />
-                        <button onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </button>
-                        <label>Confirm Password</label>
-                        <input
-                            name='confirmPassword'
-                            id='confirmPassword'
-                            type={showPassword ? 'text' : 'password'}
-                            value={confirmPassword}
-                            onChange={handleChange}
-                            className='border rounded p-1 mb-2'
-                            required
-                        />
-                        <button onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                        </button>
-                        {error && <p className='text-red-500'>{error}</p>}
+                        <div className='relative'>
+                            <input
+                                name='password'
+                                id='password'
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={handleChange}
+                                className='border rounded p-1 mb-2 w-full'
+                                required
+                            />
+                            <button 
+                                type='button'
+                                onClick={() => setShowPassword(!showPassword)}
+                                className='absolute right-2 top-2'
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
+                        </div>
 
-                        <button type='submit' className='bg-black text-white rounded-lg p-2 mt-2'>
-                            Sign Up
+                        <label>Confirm Password</label>
+                        <div className='relative'>
+                            <input
+                                name='confirmPassword'
+                                id='confirmPassword'
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={handleChange}
+                                className='border rounded p-1 mb-2 w-full'
+                                required
+                            />
+                            <button 
+                                type='button'
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className='absolute right-2 top-2'
+                            >
+                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
+                        </div>
+
+                        <button 
+                            type='submit' 
+                            className='bg-black text-white rounded-lg p-2 mt-2'
+                            disabled={isLoading}
+                        >
+                            {isLoading?(<><span>Signing up</span><ClipLoader size={10} style={{color:'white'}}/></>) :('Sign Up')}
                         </button>
                     </form>
                 </div>
@@ -146,8 +218,29 @@ const SignUp = () => {
                         Google
                     </button>
                 </div>
-                <div className='text-end text-sm italic underline hover:cursor-pointer' onClick={()=>navigate('/login')}>Already have an account?</div>
+                <div 
+                    className='text-end text-sm italic underline hover:cursor-pointer' 
+                    onClick={()=>navigate('/login')}
+                >
+                    Already have an account?
+                </div>
             </div>
+            {verificationMessage && (
+                    <>
+                    <div className='inset-0 fixed bg-white h-screen flex justify-center items-center'>
+                    <div className='text-green-600 m-2 p-2 border rounded-lg'>
+                    {verificationMessage}
+                </div>
+                    </div>
+                    </>
+                )}
+                {signInError&&(
+                    <ToastContainer
+                    />
+                )}
+                {isLoading&&(
+                        <Spinner/>
+                )}
         </div>
     );
 };
