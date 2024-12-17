@@ -19,15 +19,16 @@ import java.util.Map;
 public class User implements UserDetails, OAuth2User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "email")
     private String email;
 
-    @Column
+    @Column(name = "password")
     private String password;
 
-    @Column(unique = true)
+    @Column(unique = true, name = "public_id")
     private String publicId;
     @Column(name = "verification_token")
     private String verificationToken;
@@ -35,19 +36,19 @@ public class User implements UserDetails, OAuth2User {
     private boolean isActivated = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, name = "user_role")
     private Role role=Role.ROLE_TENANT;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider")
     private AuthProvider provider;
 
-    @Column
+    @Column(name = "provider_id")
     private String providerId;
 
     @Transient
     private Map<String, Object> attributes;
 
-    // OAuth2User implementation
     @Override
     public Map<String, Object> getAttributes() {
         return attributes;
