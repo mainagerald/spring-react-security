@@ -10,6 +10,7 @@ import com.auth.model.User;
 import com.auth.repository.UserRepository;
 import com.auth.service.AuthService;
 import com.auth.service.JwtService;
+import com.auth.service.TokenBlacklistService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -32,19 +33,16 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
+
     @Autowired
     private EmailService emailService;
 
     public ResponseEntity<?> initiateSignUp(SignUpRequest signUpRequest) {
-        // Check if email already exists
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already in use.");
         }
-
-        // Generate verification token
         String verificationToken = generateVerificationToken();
-
-        // Create unverified
         User user = new User();
         user.setEmail(signUpRequest.getEmail());
         user.setPublicId(UUID.randomUUID().toString());
@@ -64,7 +62,6 @@ public class AuthServiceImpl implements AuthService {
             return ResponseEntity.badRequest().body("Invalid verification token.");
         }
 
-        // Enable user and clear token
         user.setActivated(true);
         user.setVerificationToken(null);
         userRepository.save(user);
@@ -75,8 +72,8 @@ public class AuthServiceImpl implements AuthService {
         try {
             emailService.sendVerificationEmail(email, token);
         } catch (MessagingException e) {
-            // retry mechanism or
-            // storing failed verification emails for manual review
+            // TODO: retry mechanism
+            // TODO: storing failed verification emails for manual review
             throw new RuntimeException("Failed to send verification email", e);
         }
     }
@@ -95,7 +92,27 @@ public class AuthServiceImpl implements AuthService {
         }
         return createJwtAuthResponse(user);
     }
+    public ResponseEntity<?> logout(String accessToken, String refreshToken) {
+        try {
+            if (accessToken != null && !accessToken.isEmpty()) {
+                tokenBlacklistService.blacklistToken(accessToken);
+                String username = jwtService.extractUsername(accessToken);
 
+                // TODO: Optionally clear user details cache maybe
+                log.info("User {} logged out", username);
+            }
+            if (refreshToken != null && !refreshToken.isEmpty()) {
+                tokenBlacklistService.blacklistToken(refreshToken);
+                String username = jwtService.extractUsername(refreshToken);
+                log.info("Refresh token for user {} invalidated", username);
+            }
+
+            return ResponseEntity.ok("Logout successful");
+        } catch (Exception e) {
+            log.error("Logout failed", e);
+            return ResponseEntity.badRequest().body("Logout failed");
+        }
+    }
     public JwtAuthResponse refreshToken(String refreshToken) {
         try {
             String userEmail = jwtService.extractUsername(refreshToken);

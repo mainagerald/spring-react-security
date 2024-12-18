@@ -36,7 +36,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     newUser.setAttributes(oAuth2User.getAttributes());
                     newUser.setRole(Role.ROLE_TENANT);
 
-                    // Checking for Google OAuth
+                    // TODO: Checking for Google OAuth
+                    // TODO: Check for attributes to determine provider
                     if ("accounts.google.com".equals(oAuth2User.getAttribute("iss"))) {
                         newUser.setProvider(AuthProvider.GOOGLE);
                         newUser.setProviderId(oAuth2User.getAttribute("sub"));

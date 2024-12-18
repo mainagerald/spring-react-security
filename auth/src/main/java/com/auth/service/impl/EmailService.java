@@ -13,7 +13,6 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    // Simple text email
     public void sendSimpleMessage(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("noreply@masqani.com");
@@ -23,7 +22,6 @@ public class EmailService {
         mailSender.send(message);
     }
 
-    // HTML email with more formatting
     public void sendHtmlMessage(String to, String subject, String htmlBody) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -31,7 +29,7 @@ public class EmailService {
         helper.setFrom("noreply@masqani.com");
         helper.setTo(to);
         helper.setSubject(subject);
-        helper.setText(htmlBody, true); // true indicates html
+        helper.setText(htmlBody, true);
 
         mailSender.send(message);
     }

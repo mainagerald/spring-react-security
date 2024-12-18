@@ -3,7 +3,7 @@ package com.auth.service.impl;
 
 import com.auth.model.User;
 import com.auth.service.JwtService;
-import com.auth.service.TokenBlackistService;
+import com.auth.service.TokenBlacklistService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
-    private TokenBlackistService tokenBlackistService;
+    private TokenBlacklistService tokenBlackistService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -92,6 +92,10 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
         try {
+            if (tokenBlackistService.isTokenBlacklisted(token)) {
+                log.info("Refresh token is blacklisted");
+                return false;
+            }
             final String username = extractUsername(token);
             Claims claims = extractAllClaims(token);
             return (username.equals(userDetails.getUsername()) &&
