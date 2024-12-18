@@ -2,12 +2,15 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import axiosInstance from '../utils/AxiosInstance';
 import { environment } from '../service/environment';
 import { jwtDecode } from 'jwt-decode';
+import { replace, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -82,6 +85,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
+    setTimeout(()=>{
+      navigate("/login", {replace:true})
+    },500)
     setIsAuthenticated(false);
   };
 
