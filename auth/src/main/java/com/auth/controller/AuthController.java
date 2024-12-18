@@ -44,7 +44,6 @@ public class AuthController {
         return authService.verifyEmail(token);
     }
 
-    // Email and password validation methods
     private boolean isValidEmail(String email) {
         return email != null &&
                 email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
