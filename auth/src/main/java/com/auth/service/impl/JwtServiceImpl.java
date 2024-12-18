@@ -3,8 +3,10 @@ package com.auth.service.impl;
 
 import com.auth.model.User;
 import com.auth.service.JwtService;
+import com.auth.service.TokenBlackistService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,7 +23,10 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
+
+    private TokenBlackistService tokenBlackistService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -63,6 +68,11 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
+            if (tokenBlackistService.isTokenBlacklisted(token)) {
+                log.info("Token is blacklisted");
+                return false;
+            }
+
             final String username = extractUsername(token);
             boolean isValid = (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
             log.info("Token validation result: {}", isValid);
@@ -75,7 +85,6 @@ public class JwtServiceImpl implements JwtService {
             return false;
         }
     }
-
     @Override
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
@@ -126,7 +135,7 @@ public class JwtServiceImpl implements JwtService {
         return claimsResolvers.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
