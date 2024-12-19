@@ -116,6 +116,25 @@
 			<artifactId>hazelcast</artifactId>
 			<version>5.5.0</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.hazelcast/hazelcast-spring -->
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast-spring</artifactId>
+			<version>5.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!--  for caching tests -->
+<!--		<dependency>-->
+<!--			<groupId>com.hazelcast</groupId>-->
+<!--			<artifactId>hazelcast-spring</artifactId>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
 
 
 	</dependencies>
