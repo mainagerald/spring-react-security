@@ -13,4 +13,5 @@ public interface AuthService {
     JwtAuthResponse signIn(SignInRequest signInRequest);
     JwtAuthResponse refreshToken(String refreshToken);
     boolean isTokenValid(String token);
+    ResponseEntity<?> logout(String accessToken, String refreshToken);
 }

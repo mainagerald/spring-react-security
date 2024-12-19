@@ -1,7 +1,5 @@
 package com.auth.controller;
 
-
-
 import com.auth.dto.*;
 import com.auth.model.User;
 import com.auth.service.AuthService;
@@ -23,10 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
-
     private final AuthService authService;
     private final UserService userService;
-
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequest signUpRequest) {
@@ -35,7 +31,6 @@ public class AuthController {
                 !isValidPassword(signUpRequest.getPassword())) {
             return ResponseEntity.badRequest().body("Invalid email or password.");
         }
-
         return authService.initiateSignUp(signUpRequest);
     }
 
@@ -63,6 +58,12 @@ public class AuthController {
     public ResponseEntity<JwtAuthResponse> refreshToken(@RequestBody RefreshTokenRequest request){
         String refreshToken = request.getRefreshToken().replace("\"", "");
         return ResponseEntity.ok(authService.refreshToken(refreshToken));
+    }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody LogoutRequest request){
+        String refreshToken = request.getRefreshToken();
+        String accessToken = request.getAccessToken();
+        return  ResponseEntity.ok(authService.logout(accessToken,refreshToken));
     }
     @PostMapping("/validate-token")
     public ResponseEntity<?> validateToken(@RequestBody ValidateTokenRequest request){

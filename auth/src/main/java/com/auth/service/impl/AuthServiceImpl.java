@@ -1,6 +1,5 @@
 package com.auth.service.impl;
 
-
 import com.auth.dto.JwtAuthResponse;
 import com.auth.dto.SignInRequest;
 import com.auth.dto.SignUpRequest;
@@ -34,9 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
-
-    @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
 
     public ResponseEntity<?> initiateSignUp(SignUpRequest signUpRequest) {
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {

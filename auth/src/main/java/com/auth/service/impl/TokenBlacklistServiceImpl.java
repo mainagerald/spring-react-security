@@ -23,7 +23,6 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
     public void blacklistToken(String token) {
         IMap<String, Boolean> tokenBlacklist =
                 hazelcastInstance.getMap("tokenBlacklistCache");
-
         try {
             Claims claims = jwtService.extractAllClaims(token);
             long expirationTime = claims.getExpiration().getTime();
@@ -37,6 +36,7 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
         }
     }
     public boolean isTokenBlacklisted(String token) {
+        log.info("checking if token {} is blacklisted", token);
         ConcurrentMap<String, Boolean> tokenBlacklist =
                 hazelcastInstance.getMap("tokenBlacklistCache");
         return tokenBlacklist.containsKey(token);
