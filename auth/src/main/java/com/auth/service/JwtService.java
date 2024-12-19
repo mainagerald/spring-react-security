@@ -1,8 +1,10 @@
 package com.auth.service;
 
+import io.jsonwebtoken.Claims;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public interface JwtService {
+    Claims extractAllClaims(String token);
     String generateAccessToken(UserDetails userDetails);
     String generateRefreshToken(UserDetails userDetails);
     String generateToken(UserDetails userDetails, long expiration);

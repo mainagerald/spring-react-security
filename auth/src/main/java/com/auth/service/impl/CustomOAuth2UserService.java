@@ -28,32 +28,38 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
         String email = oAuth2User.getAttribute("email");
+        if (email == null) {
+            throw new OAuth2AuthenticationException("Email not found from OAuth provider");
+        }
+
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setEmail(oAuth2User.getAttribute("email"));
-                    newUser.setPublicId(UUID.randomUUID().toString());
-                    newUser.setAttributes(oAuth2User.getAttributes());
-                    newUser.setRole(Role.ROLE_TENANT);
+                .map(existingUser -> updateExistingUser(existingUser, oAuth2User))
+                .orElseGet(() -> createNewUser(oAuth2User));
 
-                    // Checking for Google OAuth
-                    if ("accounts.google.com".equals(oAuth2User.getAttribute("iss"))) {
-                        newUser.setProvider(AuthProvider.GOOGLE);
-                        newUser.setProviderId(oAuth2User.getAttribute("sub"));
-//                    }
-//                    // Checking for GitHub OAuth
-//                    else if (oAuth2User.getAttribute("login") != null) {
-//                        newUser.setProvider(AuthProvider.GITHUB);
-//                        newUser.setProviderId(oAuth2User.getAttribute("id").toString());
-                    } else {
-                        newUser.setProvider(AuthProvider.LOCAL);
-                    }
-                    return userRepository.save(newUser);
-                });
+        return oAuth2User;
+    }
 
-        // Set attributes for the existing user
+    private User updateExistingUser(User existingUser, OAuth2User oAuth2User) {
+        existingUser.setAttributes(oAuth2User.getAttributes());
+        userRepository.save(existingUser);
+        return existingUser;
+    }
+
+    private User createNewUser(OAuth2User oAuth2User) {
+        User user = new User();
+        user.setEmail(oAuth2User.getAttribute("email"));
+        user.setPublicId(UUID.randomUUID().toString());
+        user.setActivated(true);
         user.setAttributes(oAuth2User.getAttributes());
 
-        return user;
+//        todo: CHECK FOR PROVIDER DETAILS
+        if ("accounts.google.com".equals(oAuth2User.getAttribute("iss"))) {
+            user.setProvider(AuthProvider.GOOGLE);
+            user.setProviderId(oAuth2User.getAttribute("sub"));
+        } else {
+            user.setProvider(AuthProvider.LOCAL);
+        }
+
+        return userRepository.save(user);
     }
 }

@@ -2,6 +2,7 @@ package com.auth.config;
 
 import com.auth.dto.JwtAuthResponse;
 import com.auth.enums.AuthProvider;
+import com.auth.exceptions.NotFoundException;
 import com.auth.model.User;
 import com.auth.repository.UserRepository;
 import com.auth.service.JwtService;
@@ -36,9 +37,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         log.info("Gotten user {} from context----------", oAuth2User);
         String email = oAuth2User.getAttribute("email");
+        if(email==null){
+            throw new NotFoundException("Email not found for oauth user");
+        }
 
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createNewUser(oAuth2User));
+                .orElseThrow(()->new IllegalStateException("User with email not found for email:"+email));
 
         JwtAuthResponse jwtResponse = createJwtResponse(user);
 
@@ -53,24 +57,24 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         response.sendRedirect(redirectUrl);
     }
 
-    private User createNewUser(OAuth2User oAuth2User) {
-        User user = new User();
-        user.setEmail(oAuth2User.getAttribute("email"));
-        user.setPublicId(UUID.randomUUID().toString());
-        user.setActivated(true);
-        user.setAttributes(oAuth2User.getAttributes());
-
-        log.info("Checking provider ----------------{}",oAuth2User.getAttributes());
-        // Checking for Google OAuth
-        if ("accounts.google.com".equals(oAuth2User.getAttribute("iss"))) {
-            user.setProvider(AuthProvider.GOOGLE);
-            user.setProviderId(oAuth2User.getAttribute("sub"));
-        } else {
-            user.setProvider(AuthProvider.LOCAL);
-        }
-
-        return userRepository.save(user);
-    }
+//    private User createNewUser(OAuth2User oAuth2User) {
+//        User user = new User();
+//        user.setEmail(oAuth2User.getAttribute("email"));
+//        user.setPublicId(UUID.randomUUID().toString());
+//        user.setActivated(true);
+//        user.setAttributes(oAuth2User.getAttributes());
+//
+//        log.info("Checking provider ----------------{}",oAuth2User.getAttributes());
+//        // Checking for Google OAuth
+//        if ("accounts.google.com".equals(oAuth2User.getAttribute("iss"))) {
+//            user.setProvider(AuthProvider.GOOGLE);
+//            user.setProviderId(oAuth2User.getAttribute("sub"));
+//        } else {
+//            user.setProvider(AuthProvider.LOCAL);
+//        }
+//
+//        return userRepository.save(user);
+//    }
 
     private JwtAuthResponse createJwtResponse(User user) {
         JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();

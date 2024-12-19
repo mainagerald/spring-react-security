@@ -3,10 +3,14 @@ package com.auth.service.impl;
 
 import com.auth.model.User;
 import com.auth.service.JwtService;
+import com.auth.service.TokenBlacklistService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -22,7 +26,11 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class JwtServiceImpl implements JwtService {
-
+    private final TokenBlacklistService tokenBlacklistService;
+    //    lazy inject tokenService to avoid circular ref
+    public JwtServiceImpl(@Lazy TokenBlacklistService tokenBlacklistService){
+        this.tokenBlacklistService=tokenBlacklistService;
+    }
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -63,6 +71,12 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
+            log.info("checking validity for token {}", token);
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                log.info("Token is blacklisted");
+                return false;
+            }
+
             final String username = extractUsername(token);
             boolean isValid = (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
             log.info("Token validation result: {}", isValid);
@@ -75,7 +89,6 @@ public class JwtServiceImpl implements JwtService {
             return false;
         }
     }
-
     @Override
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
@@ -83,6 +96,10 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
         try {
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                log.info("Refresh token is blacklisted");
+                return false;
+            }
             final String username = extractUsername(token);
             Claims claims = extractAllClaims(token);
             return (username.equals(userDetails.getUsername()) &&
@@ -126,7 +143,7 @@ public class JwtServiceImpl implements JwtService {
         return claimsResolvers.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
