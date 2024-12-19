@@ -10,6 +10,7 @@ import com.auth.SECURITY.repository.UserRepository;
 import com.auth.SECURITY.service.AuthService;
 import com.auth.SECURITY.service.JwtService;
 import com.auth.SECURITY.service.TokenBlacklistService;
+import com.auth.SECURITY.service.UserService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final UserService userService;
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
 
@@ -86,6 +88,7 @@ public class AuthServiceImpl implements AuthService {
         if(!user.isActivated()){
             throw new UnauthorizedException("User is not activated!");
         }
+        userService.checkCache(user.getEmail());
         return createJwtAuthResponse(user);
     }
     public ResponseEntity<?> logout(String accessToken, String refreshToken) {

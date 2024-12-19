@@ -67,7 +67,6 @@ public class AuthController {
     }
 
 
-
     @GetMapping("/oauth/callback")
     public ResponseEntity<String> handleOAuthCallback(OAuth2AuthenticationToken authentication) {
         OAuth2User oAuth2User = authentication.getPrincipal();

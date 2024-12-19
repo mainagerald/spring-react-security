@@ -12,8 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
@@ -28,12 +26,7 @@ class UserServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private CacheManager cacheManager;
-
-    @Mock
-    private Cache cache;
-
+    private HazelcastCacheManager cacheManager;
     private UserServiceImpl userService;
     private User testUser;
     private final String TEST_EMAIL = "test@example.com";
@@ -44,10 +37,11 @@ class UserServiceImplTest {
         // Initialize mocks
         MockitoAnnotations.openMocks(this);
 
-        // Setup cache mock
-        when(cacheManager.getCache("userDetailsCache")).thenReturn(cache);
+        // Setup real Hazelcast cache
+        hazelcastInstance = Hazelcast.newHazelcastInstance();
+        cacheManager = new HazelcastCacheManager(hazelcastInstance);
 
-        // Initialize service with mocks
+        // Initialize service with real cache manager and mock repository
         userService = new UserServiceImpl(userRepository, cacheManager);
 
         // Setup test user
@@ -100,13 +94,15 @@ class UserServiceImplTest {
     void loadUserByUsername_VerifyCaching() {
         // Arrange
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(testUser));
-        when(cache.get(TEST_EMAIL)).thenReturn(null, () -> testUser);
 
         // Act
-        userService.loadUserByUsername(TEST_EMAIL); // First call
-        userService.loadUserByUsername(TEST_EMAIL); // Second call
+        UserDetails firstCall = userService.loadUserByUsername(TEST_EMAIL);
+        UserDetails secondCall = userService.loadUserByUsername(TEST_EMAIL);
 
         // Assert
-        verify(userRepository, times(1)).findByEmail(TEST_EMAIL); // Repository should be called only once
+        verify(userRepository, times(1)).findByEmail(TEST_EMAIL);
+        assertNotNull(firstCall);
+        assertNotNull(secondCall);
+        assertEquals(firstCall, secondCall);
     }
 }

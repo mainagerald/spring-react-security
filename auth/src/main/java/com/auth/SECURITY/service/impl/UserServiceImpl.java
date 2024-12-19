@@ -25,4 +25,13 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found."));
     }
+//    test cache brute
+    public void checkCache(String username) {
+        var cache = cacheManager.getCache("UserDetailsCache");
+        if (cache != null) {
+            var cacheEntry = cache.get(username);
+            log.info("Cache entry for {}: {}", username, cacheEntry);
+        }
+    }
+
 }
