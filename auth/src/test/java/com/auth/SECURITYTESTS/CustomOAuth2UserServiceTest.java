@@ -1,5 +1,5 @@
 //package com.auth.SECURITYTESTS;
-//
+
 //import com.auth.SECURITY.model.User;
 //import com.auth.SECURITY.repository.UserRepository;
 //import com.auth.SECURITY.service.impl.CustomOAuth2UserService;
@@ -27,7 +27,8 @@
 //
 //@ExtendWith(MockitoExtension.class)
 //class CustomOAuth2UserServiceTest {
-//
+//TODO:IMPL FUNCTIONAL TESTS
+
 //    @Mock
 //    private UserRepository userRepository;
 //
