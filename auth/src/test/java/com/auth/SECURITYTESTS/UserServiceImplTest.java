@@ -50,7 +50,7 @@ class UserServiceImplTest {
         testUser.setEmail(TEST_EMAIL);
         testUser.setPublicId(UUID.randomUUID().toString());
         testUser.setPassword("encoded_password");
-        testUser.setRole(Role.ROLE_TENANT);
+        testUser.setRole(Role.ROLE_USER);
         testUser.setActivated(true);
 
         // Initialize Hazelcast for integration testing if needed

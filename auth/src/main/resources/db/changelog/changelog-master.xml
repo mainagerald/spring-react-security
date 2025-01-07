@@ -25,5 +25,11 @@
             <column name="provider_id" type="varchar(255)"/>
         </createTable>
     </changeSet>
+    <changeSet id="2-edit-cols" author="maina">
+        <addColumn tableName="users" >
+            <column name="oauth2_attributes" type="TEXT"/>
+        </addColumn>
+        <modifyDataType tableName="users" columnName="user_role" newDataType="varchar(255) DEFAULT 'ROLE_USER'"/>
+        <renameColumn tableName="users" oldColumnName="user_role" newColumnName="role" columnDataType="varchar(255)"/>    </changeSet>
 
 </databaseChangeLog>

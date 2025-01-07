@@ -1,6 +1,6 @@
 package com.auth.SECURITY.enums;
 
 public enum Role {
-    ROLE_TENANT,
-    ROLE_LANDLORD,
+    ROLE_USER,
+    ROLE_ADMIN,
 }

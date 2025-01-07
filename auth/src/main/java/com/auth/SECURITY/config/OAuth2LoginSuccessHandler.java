@@ -55,24 +55,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         response.sendRedirect(redirectUrl);
     }
 
-//    private User createNewUser(OAuth2User oAuth2User) {
-//        User user = new User();
-//        user.setEmail(oAuth2User.getAttribute("email"));
-//        user.setPublicId(UUID.randomUUID().toString());
-//        user.setActivated(true);
-//        user.setAttributes(oAuth2User.getAttributes());
-//
-//        log.info("Checking provider ----------------{}",oAuth2User.getAttributes());
-//        // Checking for Google OAuth
-//        if ("accounts.google.com".equals(oAuth2User.getAttribute("iss"))) {
-//            user.setProvider(AuthProvider.GOOGLE);
-//            user.setProviderId(oAuth2User.getAttribute("sub"));
-//        } else {
-//            user.setProvider(AuthProvider.LOCAL);
-//        }
-//
-//        return userRepository.save(user);
-//    }
 
     private JwtAuthResponse createJwtResponse(User user) {
         JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();

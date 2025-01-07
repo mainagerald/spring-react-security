@@ -2,6 +2,8 @@ package com.auth.SECURITY.model;
 
 import com.auth.SECURITY.enums.AuthProvider;
 import com.auth.SECURITY.enums.Role;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +13,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @Data
@@ -37,7 +40,7 @@ public class User implements UserDetails, OAuth2User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "user_role")
-    private Role role=Role.ROLE_TENANT;
+    private Role role=Role.ROLE_USER;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "auth_provider")
@@ -46,14 +49,37 @@ public class User implements UserDetails, OAuth2User {
     @Column(name = "provider_id")
     private String providerId;
 
+
+    @Column(name = "oauth2_attributes")
+    private String oauth2AttributesJson;
+
     @Transient
     private Map<String, Object> attributes;
 
-    @Override
     public Map<String, Object> getAttributes() {
-        return attributes;
+        if (attributes == null && oauth2AttributesJson != null) {
+            // deserialize attributes when needed
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                attributes = mapper.readValue(oauth2AttributesJson,
+                        new TypeReference<Map<String, Object>>() {});
+            } catch (Exception e) {
+                attributes = new HashMap<>();
+            }
+        }
+        return attributes == null ? new HashMap<>() : attributes;
     }
 
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes = attributes;
+        try {
+            // for storage
+            ObjectMapper mapper = new ObjectMapper();
+            this.oauth2AttributesJson = mapper.writeValueAsString(attributes);
+        } catch (Exception e) {
+            this.oauth2AttributesJson = "{}";
+        }
+    }
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(role.name()));
